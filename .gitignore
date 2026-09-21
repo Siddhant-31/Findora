@@ -6,3 +6,5 @@ __pycache__/
 .venv/ 
 ragas_*.csv 
 ragas_comparison_results.csv
+Neo4j-f936962e-Created-2026-09-15.txt
+AWS_DEPLOYMENT_GUIDE.md
