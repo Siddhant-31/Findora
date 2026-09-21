@@ -1,0 +1,19 @@
+# Install into the SAME venv as your existing requirements.txt.
+#
+# ragas==0.2.15 is pinned because the latest ragas pulls a langchain-community
+# version that dropped a module ragas still imports (ChatVertexAI).
+# langchain-community is pinned to >=0.3.19 because 0.3.7-0.3.18 cap
+# numpy<2.0 on Python>=3.12, and numpy versions below 2.1 have no prebuilt
+# wheel for Python 3.12/3.13 — that forces a from-source numpy build that
+# then fails without a modern compiler. langchain-core/langchain-openai are
+# left unpinned so pip resolves whatever versions those two actually need
+# together; pinning them exactly was what caused the numpy downgrade
+# originally. Verified end-to-end with numpy landing on 2.5.3.
+
+ragas==0.2.15
+langchain-community>=0.3.19
+langchain-google-genai==2.0.9
+langchain-huggingface==0.1.2
+pandas>=2.0
+python-dotenv
+rapidfuzz>=3.0

@@ -1,0 +1,8 @@
+.env 
+data/ 
+data_aura/ 
+__pycache__/ 
+*.pyc 
+.venv/ 
+ragas_*.csv 
+ragas_comparison_results.csv

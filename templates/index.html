@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Findora — Smart Product Search</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --ink: #1a1612;
+    --paper: #f0ece3;
+    --card: #faf8f4;
+    --line: rgba(26,22,18,0.09);
+    --line-strong: rgba(26,22,18,0.16);
+    --accent: #2d6a4f;
+    --accent-soft: #e8f2ec;
+    --accent-mid: #40916c;
+    --warm: #a63d20;
+    --muted: #6b6358;
+    --muted-light: #9e9288;
+    --btn-from: #1a3a2a;
+    --btn-to: #2d6a4f;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 0 24px 96px;
+    position: relative;
+    z-index: 1;
+  }
+
+  nav {
+    padding: 28px 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 72px;
+    position: relative;
+  }
+
+  .brand-name {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 2.4rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  .brand-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+    margin-left: 2px;
+    vertical-align: middle;
+    position: relative;
+    top: -3px;
+  }
+
+  .nav-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 4px 10px;
+    border-radius: 100px;
+    border: 1px solid rgba(45,106,79,0.2);
+  }
+
+  /* ---------- account menu (top-right of nav) ---------- */
+  .account-menu {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .account-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    padding: 6px 8px 6px 8px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .account-pill:hover { border-color: var(--line-strong); }
+
+  .account-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+
+  .account-email {
+    font-size: 0.78rem;
+    color: var(--muted);
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .account-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: #fff;
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.1);
+    min-width: 190px;
+    padding: 6px;
+    display: none;
+    z-index: 20;
+  }
+
+  .account-dropdown.open { display: block; }
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 10px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    color: var(--ink);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+
+  .dropdown-item:hover { background: var(--accent-soft); color: var(--accent); }
+  .dropdown-item.danger:hover { background: #f6e6e1; color: var(--warm); }
+
+  .history-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    padding: 7px 12px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .history-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---------- history panel ---------- */
+  .history-panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 28px;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.25s ease;
+  }
+
+  .history-panel.open { max-height: 400px; overflow-y: auto; }
+
+  .history-panel-inner { padding: 14px 16px; }
+
+  .history-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted-light);
+    margin-bottom: 10px;
+  }
+
+  .history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 8px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+
+  .history-item:hover { background: var(--accent-soft); }
+
+  .history-query {
+    font-size: 0.84rem;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .history-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted-light);
+    flex-shrink: 0;
+  }
+
+  .history-empty {
+    font-size: 0.8rem;
+    color: var(--muted-light);
+    font-style: italic;
+    padding: 10px 8px;
+  }
+
+  /* ---------- auth screen ---------- */
+  .auth-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 160px);
+    padding: 20px 0 80px;
+  }
+
+  .auth-card {
+    width: 100%;
+    max-width: 400px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 40px 36px 36px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 28px rgba(0,0,0,0.06);
+  }
+
+  .auth-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  .auth-heading {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--ink);
+    margin-bottom: 6px;
+    line-height: 1.25;
+  }
+
+  .auth-sub {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 26px;
+    line-height: 1.55;
+  }
+
+  .auth-sub .chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink);
+    background: rgba(26,22,18,0.05);
+    padding: 1px 7px;
+    border-radius: 5px;
+  }
+
+  .field-group { margin-bottom: 16px; }
+
+  .field-label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted-light);
+    margin-bottom: 7px;
+  }
+
+  .field-input {
+    width: 100%;
+    padding: 13px 14px;
+    font-size: 0.92rem;
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    background: #fff;
+    border: 1.5px solid rgba(26,22,18,0.18);
+    border-radius: 9px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .field-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(45,106,79,0.12);
+  }
+
+  .field-input.field-error {
+    border-color: var(--warm);
+  }
+
+  .field-hint {
+    font-size: 0.74rem;
+    color: var(--muted-light);
+    margin-top: 6px;
+  }
+
+  .auth-btn {
+    width: 100%;
+    padding: 14px;
+    margin-top: 6px;
+    font-size: 0.85rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    background: var(--ink);
+    color: #f5f2ec;
+    border: none;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .auth-btn:hover { background: var(--accent); }
+  .auth-btn:active { transform: scale(0.99); }
+  .auth-btn:disabled { background: var(--muted-light); cursor: wait; }
+
+  .auth-alt-action {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 0.8rem;
+    color: var(--muted-light);
+  }
+
+  .auth-link {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .auth-error {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.76rem;
+    color: var(--warm);
+    background: #f6e6e1;
+    border: 1px solid rgba(166,61,32,0.2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    display: none;
+    line-height: 1.5;
+  }
+
+  .auth-error.show { display: block; }
+
+  .back-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    color: var(--muted-light);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    margin-bottom: 18px;
+    padding: 0;
+    transition: color 0.15s;
+  }
+
+  .back-step:hover { color: var(--accent); }
+
+  .hidden { display: none !important; }
+
+  .hero {
+    margin-bottom: 52px;
+  }
+
+  .hero h1 {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: clamp(1.3rem, 3vw, 1.7rem);
+    font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent-mid);
+  }
+
+  .search-wrap {
+    margin-bottom: 36px;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: stretch;
+    border: 1.5px solid rgba(26,22,18,0.25);
+    border-radius: 100px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+
+  .input-row:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(45,106,79,0.12), 0 4px 16px rgba(0,0,0,0.06);
+  }
+
+  .search-icon {
+    display: flex;
+    align-items: center;
+    padding: 0 4px 0 18px;
+    color: var(--muted-light);
+    flex-shrink: 0;
+  }
+
+  input[type="text"], input[type="password"], input[type="email"] {
+    flex: 1;
+    padding: 17px 14px;
+    font-size: 0.97rem;
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    background: transparent;
+    border: none;
+    outline: none;
+    min-width: 0;
+  }
+
+  input[type="text"]::placeholder {
+    color: var(--muted-light);
+    font-style: italic;
+  }
+
+  .search-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px;
+    padding: 0 22px;
+    font-size: 0.82rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    background: var(--ink);
+    color: #f5f2ec;
+    border: none;
+    border-radius: 100px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .search-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.07) 100%);
+    pointer-events: none;
+  }
+
+  .search-btn .btn-icon {
+    display: flex;
+    align-items: center;
+    transition: transform 0.2s;
+  }
+
+  .search-btn:hover {
+    background: var(--accent);
+  }
+
+  .search-btn:hover .btn-icon {
+    transform: translateX(2px);
+  }
+
+  .search-btn:active { transform: scale(0.98); }
+  .search-btn:disabled { background: var(--muted-light); cursor: wait; }
+  .search-btn:disabled .btn-icon { transform: none; }
+
+  #status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.74rem;
+    color: var(--muted-light);
+    letter-spacing: 0.03em;
+    min-height: 20px;
+    padding: 10px 0 4px;
+  }
+
+  #status.error { color: var(--warm); }
+
+  .results { display: flex; flex-direction: column; }
+
+  .ai-card {
+    background: var(--accent-soft);
+    border: 1px solid rgba(45,106,79,0.2);
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin-bottom: 14px;
+  }
+
+  .ai-card-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .ai-card p {
+    font-size: 0.92rem;
+    color: #1e4535;
+    line-height: 1.65;
+  }
+
+  /* ---------------- comparison table ---------------- */
+  .compare-wrap {
+    overflow-x: auto;
+    margin-bottom: 10px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table.compare-table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 640px;
+  }
+
+  .compare-table th, .compare-table td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+
+  .compare-table th {
+    background: var(--paper);
+    position: sticky;
+    top: 0;
+  }
+
+  .compare-table .row-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted-light);
+    white-space: nowrap;
+    background: var(--card);
+  }
+
+  .compare-table tr:last-child th, .compare-table tr:last-child td { border-bottom: none; }
+
+  .compare-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.3;
+    max-width: 200px;
+  }
+
+  .compare-origin {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted-light);
+    margin-top: 4px;
+  }
+
+  .compare-price {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 1.15rem;
+    color: var(--warm);
+  }
+
+  .compare-desc {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.55;
+    max-width: 220px;
+  }
+
+  .best-badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--accent);
+    padding: 3px 8px;
+    border-radius: 20px;
+    margin-bottom: 6px;
+  }
+
+  th.best-col, td.best-col {
+    background: var(--accent-soft);
+  }
+
+  .compare-link-btn {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(45,106,79,0.35);
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .compare-link-btn:hover { background: var(--accent-soft); }
+
+  .compare-match-track {
+    width: 90px;
+    height: 5px;
+    background: var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .compare-match-fill {
+    height: 100%;
+    background: var(--accent-mid);
+  }
+  .compare-match-pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+
+  .card {
+    display: block;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 22px 24px;
+    margin-bottom: 10px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+  }
+
+  a.card { cursor: pointer; }
+  a.card:active { transform: scale(0.995); }
+
+  .card:hover {
+    border-color: var(--line-strong);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+
+  .card-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+
+  .card-origin {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.67rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted-light);
+    margin-top: 4px;
+  }
+
+  .card-price {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+    color: var(--warm);
+    white-space: nowrap;
+    flex-shrink: 0;
+    line-height: 1;
+    padding-top: 2px;
+  }
+
+  .card-desc {
+    font-size: 0.89rem;
+    color: var(--muted);
+    line-height: 1.65;
+    margin-bottom: 14px;
+  }
+
+  .card-specs {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted-light);
+    margin-bottom: 12px;
+    letter-spacing: 0.02em;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.67rem;
+    background: rgba(26,22,18,0.05);
+    color: var(--muted);
+    padding: 3px 9px;
+    border-radius: 100px;
+    border: 1px solid var(--line);
+  }
+
+  .match-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+
+  .match-track {
+    flex: 1;
+    height: 3px;
+    background: rgba(26,22,18,0.08);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .match-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .match-pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted-light);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .empty {
+    text-align: center;
+    padding: 72px 20px;
+    color: var(--muted-light);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    border: 1px dashed var(--line-strong);
+    border-radius: 10px;
+  }
+
+  .thankyou {
+    text-align: center;
+    padding: 56px 20px 20px;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 2rem;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    color: var(--muted-light);
+    font-style: italic;
+  }
+
+  @media (max-width: 560px) {
+    nav { margin-bottom: 48px; flex-direction: column; align-items: center; gap: 14px; padding-bottom: 16px; }
+    .account-menu { position: static; transform: none; }
+    .hero h1 { font-size: 1.9rem; }
+    .input-row { flex-wrap: wrap; }
+    .search-btn { flex: 1; justify-content: center; margin: 0 6px 6px; }
+    .auth-card { padding: 32px 24px 28px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav>
+    <span class="brand-name">Findora</span>
+
+    <div class="account-menu hidden" id="account-menu">
+      <button class="history-btn" id="history-toggle" type="button">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M8 4v4l2.5 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/>
+        </svg>
+        History
+      </button>
+      <div style="position:relative;">
+        <button class="account-pill" id="account-pill" type="button">
+          <span class="account-avatar" id="account-avatar">?</span>
+        </button>
+        <div class="account-dropdown" id="account-dropdown">
+          <div style="padding:8px 12px 10px;border-bottom:1px solid var(--line);margin-bottom:4px;">
+            <p style="font-size:0.78rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="dropdown-email"></p>
+          </div>
+          <button class="dropdown-item danger" id="logout-btn" type="button">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M6 2H3.5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1H6M10.5 11l3-3-3-3M13.5 8H5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Sign out
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===================== AUTH SCREEN ===================== -->
+  <div class="auth-screen" id="auth-screen">
+    <div class="auth-card">
+
+      <div class="auth-error" id="auth-error"></div>
+
+      <!-- Step 1: email -->
+      <form id="form-email">
+        <p class="auth-eyebrow">Welcome</p>
+        <h2 class="auth-heading">Sign in or create an account</h2>
+        <p class="auth-sub">Enter your email to continue. We'll check if you already have a Findora account.</p>
+
+        <div class="field-group">
+          <label class="field-label" for="email-input">Email</label>
+          <input class="field-input" type="email" id="email-input" placeholder="you@example.com" required autocomplete="email">
+        </div>
+
+        <button type="submit" class="auth-btn" id="email-continue-btn">Continue</button>
+      </form>
+
+      <!-- Step 2a: login (existing user) -->
+      <form id="form-login" class="hidden">
+        <button type="button" class="back-step" id="back-from-login">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Back
+        </button>
+        <p class="auth-eyebrow">Welcome back</p>
+        <h2 class="auth-heading">Enter your password</h2>
+        <p class="auth-sub">Signing in as <span class="chip" id="login-email-chip"></span></p>
+
+        <div class="field-group">
+          <label class="field-label" for="login-password-input">Password</label>
+          <input class="field-input" type="password" id="login-password-input" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" class="auth-btn" id="login-btn">Sign in</button>
+      </form>
+
+      <!-- Step 2b: signup (new user) -->
+      <form id="form-signup" class="hidden">
+        <button type="button" class="back-step" id="back-from-signup">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Back
+        </button>
+        <p class="auth-eyebrow">New here</p>
+        <h2 class="auth-heading">Create your account</h2>
+        <p class="auth-sub">No account found for <span class="chip" id="signup-email-chip"></span>. Set a password to get started.</p>
+
+        <div class="field-group">
+          <label class="field-label" for="signup-password-input">Password</label>
+          <input class="field-input" type="password" id="signup-password-input" placeholder="At least 8 characters" required autocomplete="new-password" minlength="8">
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="signup-confirm-input">Confirm password</label>
+          <input class="field-input" type="password" id="signup-confirm-input" placeholder="Re-enter password" required autocomplete="new-password" minlength="8">
+        </div>
+
+        <button type="submit" class="auth-btn" id="signup-btn">Create account</button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ===================== APP SCREEN ===================== -->
+  <div id="app-screen" class="hidden">
+
+    <div class="hero">
+      <h1>The right product has always <em>existed.</em></h1>
+    </div>
+
+    <div class="search-wrap">
+      <form id="search-form">
+        <div class="input-row">
+          <span class="search-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="6.5" cy="6.5" r="4.75" stroke="currentColor" stroke-width="1.4"/>
+              <path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <input type="text" id="query" placeholder="Search products..." autocomplete="off">
+          <button type="submit" class="search-btn" id="submit-btn">
+            <span class="btn-label">Find it</span>
+            <span class="btn-icon">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </form>
+      <div id="status"></div>
+    </div>
+
+    <div class="history-panel" id="history-panel">
+      <div class="history-panel-inner">
+        <p class="history-title">Recent searches</p>
+        <div id="history-list"></div>
+      </div>
+    </div>
+
+    <div class="results" id="results"></div>
+
+  </div>
+
+</div>
+
+<script>
+
+const SESSION_KEY = 'findora_session';
+
+let session = null; // { user_id, token, email }
+
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (raw) session = JSON.parse(raw);
+  } catch (e) { session = null; }
+}
+
+function saveSession(s) {
+  session = s;
+  localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+}
+
+function clearSession() {
+  session = null;
+  localStorage.removeItem(SESSION_KEY);
+}
+
+function authHeaders() {
+  return session && session.token ? { 'Authorization': `Bearer ${session.token}` } : {};
+}
+
+/* ---------------- screen elements ---------------- */
+const authScreen = document.getElementById('auth-screen');
+const appScreen = document.getElementById('app-screen');
+const accountMenu = document.getElementById('account-menu');
+
+const formEmail = document.getElementById('form-email');
+const formLogin = document.getElementById('form-login');
+const formSignup = document.getElementById('form-signup');
+const authError = document.getElementById('auth-error');
+
+const emailInput = document.getElementById('email-input');
+const loginEmailChip = document.getElementById('login-email-chip');
+const signupEmailChip = document.getElementById('signup-email-chip');
+const loginPasswordInput = document.getElementById('login-password-input');
+const signupPasswordInput = document.getElementById('signup-password-input');
+const signupConfirmInput = document.getElementById('signup-confirm-input');
+
+const emailContinueBtn = document.getElementById('email-continue-btn');
+const loginBtn = document.getElementById('login-btn');
+const signupBtn = document.getElementById('signup-btn');
+
+let pendingEmail = '';
+
+function showAuthError(msg) {
+  authError.textContent = msg;
+  authError.classList.add('show');
+}
+function hideAuthError() {
+  authError.textContent = '';
+  authError.classList.remove('show');
+}
+
+function showStep(step) {
+  hideAuthError();
+  formEmail.classList.toggle('hidden', step !== 'email');
+  formLogin.classList.toggle('hidden', step !== 'login');
+  formSignup.classList.toggle('hidden', step !== 'signup');
+}
+
+/* ---- Step 1: submit email, check if user exists ---- */
+formEmail.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  hideAuthError();
+  const email = emailInput.value.trim().toLowerCase();
+  if (!email) return;
+
+  pendingEmail = email;
+  emailContinueBtn.disabled = true;
+  emailContinueBtn.textContent = 'Checking…';
+
+  try {
+    const res = await fetch('/api/auth/check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not verify that email.');
+
+    if (data.exists) {
+      loginEmailChip.textContent = email;
+      showStep('login');
+      setTimeout(() => loginPasswordInput.focus(), 50);
+    } else {
+      signupEmailChip.textContent = email;
+      showStep('signup');
+      setTimeout(() => signupPasswordInput.focus(), 50);
+    }
+  } catch (err) {
+    showAuthError(err.message);
+  } finally {
+    emailContinueBtn.disabled = false;
+    emailContinueBtn.textContent = 'Continue';
+  }
+});
+
+/* ---- Step 2a: login existing user ---- */
+formLogin.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  hideAuthError();
+  const password = loginPasswordInput.value;
+  if (!password) return;
+
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Signing in…';
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: pendingEmail, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Incorrect email or password.');
+
+    saveSession({ user_id: data.user_id, token: data.token, email: data.email || pendingEmail });
+    enterApp();
+  } catch (err) {
+    showAuthError(err.message);
+  } finally {
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Sign in';
+  }
+});
+
+/* ---- Step 2b: signup new user ---- */
+formSignup.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  hideAuthError();
+  const password = signupPasswordInput.value;
+  const confirm = signupConfirmInput.value;
+
+  if (password.length < 8) {
+    showAuthError('Password must be at least 8 characters.');
+    return;
+  }
+  if (password !== confirm) {
+    showAuthError('Passwords do not match.');
+    return;
+  }
+
+  signupBtn.disabled = true;
+  signupBtn.textContent = 'Creating account…';
+
+  try {
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: pendingEmail, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not create your account.');
+
+    saveSession({ user_id: data.user_id, token: data.token, email: data.email || pendingEmail });
+    enterApp();
+  } catch (err) {
+    showAuthError(err.message);
+  } finally {
+    signupBtn.disabled = false;
+    signupBtn.textContent = 'Create account';
+  }
+});
+
+document.getElementById('back-from-login').addEventListener('click', () => showStep('email'));
+document.getElementById('back-from-signup').addEventListener('click', () => showStep('email'));
+
+/* ---------------- account menu / logout ---------------- */
+const accountPill = document.getElementById('account-pill');
+const accountDropdown = document.getElementById('account-dropdown');
+const accountAvatar = document.getElementById('account-avatar');
+const dropdownEmail = document.getElementById('dropdown-email');
+
+accountPill.addEventListener('click', (e) => {
+  e.stopPropagation();
+  accountDropdown.classList.toggle('open');
+});
+document.addEventListener('click', () => accountDropdown.classList.remove('open'));
+
+document.getElementById('logout-btn').addEventListener('click', async () => {
+  if (session) {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ user_id: session.user_id })
+      });
+    } catch (e) { /* best-effort; clear local session regardless */ }
+  }
+  clearSession();
+  location.reload();
+});
+
+/* ---------------- entering the app after auth ---------------- */
+function enterApp() {
+  authScreen.classList.add('hidden');
+  appScreen.classList.remove('hidden');
+  accountMenu.classList.remove('hidden');
+
+  accountAvatar.textContent = (session.email || '?').charAt(0);
+  dropdownEmail.textContent = session.email;
+
+  loadHistory();
+}
+
+/* ---------------- history panel ---------------- */
+const historyToggle = document.getElementById('history-toggle');
+const historyPanel = document.getElementById('history-panel');
+const historyList = document.getElementById('history-list');
+
+historyToggle.addEventListener('click', () => {
+  historyPanel.classList.toggle('open');
+  if (historyPanel.classList.contains('open')) loadHistory();
+});
+
+async function loadHistory() {
+  if (!session) return;
+  try {
+    const res = await fetch(`/api/history?user_id=${encodeURIComponent(session.user_id)}`, {
+      headers: authHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not load history.');
+    renderHistory(data.history || []);
+  } catch (err) {
+    historyList.innerHTML = `<p class="history-empty">Couldn't load history.</p>`;
+  }
+}
+
+function renderHistory(items) {
+  if (!items.length) {
+    historyList.innerHTML = `<p class="history-empty">No searches yet.</p>`;
+    return;
+  }
+  historyList.innerHTML = items.map(item => `
+    <div class="history-item" data-query="${escapeHtml(item.query)}">
+      <span class="history-query">${escapeHtml(item.query)}</span>
+      <span class="history-time">${formatTime(item.timestamp)}</span>
+    </div>
+  `).join('');
+
+  historyList.querySelectorAll('.history-item').forEach(el => {
+    el.addEventListener('click', () => {
+      input.value = el.getAttribute('data-query');
+      historyPanel.classList.remove('open');
+      form.requestSubmit();
+    });
+  });
+}
+
+function formatTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+/* ---------------- placeholder cycling ---------------- */
+const placeholders = [
+  "wireless earbuds with 30hr battery",
+  "lightweight laptop for college under ₹45000",
+  "skincare for dry skin, fragrance-free",
+  "non-stick cookware set for induction",
+  "running shoes for flat feet",
+  "desk lamp with warm light, minimalist",
+  "dog toy that survives aggressive chewers",
+  "noise cancelling headphones under ₹5000",
+  "portable charger, fast charging, slim",
+  "face wash for oily acne-prone skin",
+];
+
+let phIdx = 0;
+let phTimer;
+const inputEl = document.getElementById('query');
+
+function cyclePlaceholder() {
+  phIdx = (phIdx + 1) % placeholders.length;
+  inputEl.placeholder = placeholders[phIdx];
+}
+
+inputEl.placeholder = placeholders[0];
+phTimer = setInterval(cyclePlaceholder, 2800);
+inputEl.addEventListener('focus', () => clearInterval(phTimer));
+inputEl.addEventListener('blur', () => {
+  if (!inputEl.value) phTimer = setInterval(cyclePlaceholder, 2800);
+});
+
+/* ---------------- search ---------------- */
+const form = document.getElementById('search-form');
+const input = document.getElementById('query');
+const statusEl = document.getElementById('status');
+const resultsEl = document.getElementById('results');
+const submitBtn = document.getElementById('submit-btn');
+const btnLabel = submitBtn.querySelector('.btn-label');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const query = input.value.trim();
+  if (!query || !session) return;
+
+  submitBtn.disabled = true;
+  btnLabel.textContent = 'Searching…';
+  statusEl.className = '';
+  statusEl.textContent = 'Retrieving historical profile context & matching graph products...';
+  resultsEl.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ query, user_id: session.user_id })
+    });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+
+    if (data.products.length === 0) {
+      statusEl.textContent = '';
+      resultsEl.innerHTML = '<div class="empty">No matches found. Try a broader description.</div>';
+    } else {
+      statusEl.textContent = `${data.products.length} results found`;
+      resultsEl.innerHTML =
+        `<div class="ai-card">
+          <p class="ai-card-label">Recommendation</p>
+          <p>${data.recommendation}</p>
+        </div>` +
+        renderComparisonTable(data.products) +
+        `<div class="thankyou">Thank you</div>`;
+    }
+
+    loadHistory();
+
+  } catch (err) {
+    statusEl.className = 'error';
+    statusEl.textContent = `Error: ${err.message}`;
+  } finally {
+    submitBtn.disabled = false;
+    btnLabel.textContent = 'Find it';
+  }
+});
+
+/* Renders all products side-by-side as a comparison table. The product with
+   the highest similarity score (already sorted first by the backend) is
+   marked as the "Best Match" column. */
+function renderComparisonTable(products) {
+  // Defensive: highest score wins "best", even if order ever changes upstream.
+  let bestIdx = 0;
+  products.forEach((p, i) => {
+    if ((p.score || 0) > (products[bestIdx].score || 0)) bestIdx = i;
+  });
+
+  const colClass = (i) => (i === bestIdx ? 'best-col' : '');
+
+  const headerCells = products.map((p, i) => `
+    <th class="${colClass(i)}">
+      ${i === bestIdx ? '<div class="best-badge">Best Match</div>' : ''}
+      <div class="compare-name">${escapeHtml(p.name)}</div>
+      <div class="compare-origin">${escapeHtml(p.brand || '')}${p.brand && p.category ? ' · ' : ''}${escapeHtml(p.category || '')}</div>
+    </th>`).join('');
+
+  const priceCells = products.map((p, i) => `
+    <td class="${colClass(i)}"><span class="compare-price">₹${Number(p.price).toLocaleString('en-IN')}</span></td>`).join('');
+
+  const matchCells = products.map((p, i) => {
+    const pct = Math.round((p.score || 0) * 100);
+    return `
+      <td class="${colClass(i)}">
+        <div class="compare-match-track"><div class="compare-match-fill" style="width:${pct}%"></div></div>
+        <span class="compare-match-pct">${pct}% match</span>
+      </td>`;
+  }).join('');
+
+  const descCells = products.map((p, i) => `
+    <td class="${colClass(i)}"><p class="compare-desc">${escapeHtml(p.description || '')}</p></td>`).join('');
+
+  const linkCells = products.map((p, i) => `
+    <td class="${colClass(i)}">
+      ${p.link
+        ? `<a class="compare-link-btn" href="${escapeHtml(p.link)}" target="_blank" rel="noopener noreferrer">View →</a>`
+        : '<span class="compare-desc">—</span>'}
+    </td>`).join('');
+
+  return `
+    <div class="compare-wrap">
+      <table class="compare-table">
+        <thead>
+          <tr><th class="row-label"></th>${headerCells}</tr>
+        </thead>
+        <tbody>
+          <tr><td class="row-label">Price</td>${priceCells}</tr>
+          <tr><td class="row-label">Match</td>${matchCells}</tr>
+          <tr><td class="row-label">Description</td>${descCells}</tr>
+          <tr><td class="row-label">Link</td>${linkCells}</tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+
+/* ---------------- boot ---------------- */
+loadSession();
+if (session && session.user_id) {
+  enterApp();
+} else {
+  showStep('email');
+}
+</script>
+</body>
+</html>
